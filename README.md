@@ -46,6 +46,59 @@ GET https://api.techflowpost.com/api/v1/external/newsflashes
 - 返回内容固定按 `created_at desc` 排序
 - 仅返回 `is_visible = true` 且 `is_deleted = false` 的数据
 
+## 多语言查询
+
+这两个接口支持多语言查询和多语言返回，但**不支持**通过查询参数传 `lang` 或 `language`。
+
+语言来源：
+
+- 优先从 `Accept-Language` 请求头识别
+- 如果未传请求头，则使用默认语言 `zh-CN`
+
+当前支持的语言：
+
+| 语言代码 | 语言名称 |
+|---|---|
+| `zh-CN` | 简体中文 |
+| `en-US` | English |
+| `ja-JP` | 日本語 |
+| `ko-KR` | 한국어 |
+| `vi-VN` | Tiếng Việt |
+| `fr-FR` | Français |
+| `zh-TW` | 繁體中文 |
+
+使用方式：
+
+- 中文请求：不传 `Accept-Language`，或传 `zh-CN`
+- 英文请求：传 `Accept-Language: en-US`
+- 其他已支持语言也可通过同样方式传入
+
+当前请求头会同时影响两件事：
+
+- `keyword` 的匹配语言
+- 返回字段的翻译语言
+
+示例：
+
+```http
+GET /api/v1/external/articles?page=1&page_size=10&keyword=bitcoin
+Accept-Language: en-US
+```
+
+说明：
+
+- 当 `Accept-Language: en-US` 时，会优先按英文翻译内容匹配 `keyword`
+- 返回结果中的 `title`、`abstract`、`content`、`category.name`、`author.name` 等字段也会按英文翻译结果返回
+- 如果未命中对应语言翻译，返回内容会回退到默认数据
+
+错误示例：
+
+```http
+GET /api/v1/external/articles?page=1&page_size=10&keyword=bitcoin&lang=en-US
+```
+
+上面的请求会返回 `400`，因为 `lang` 不属于对外公开参数。
+
 ## 文章列表
 
 ### 请求
@@ -148,6 +201,15 @@ GET /api/v1/external/newsflashes?page=1&page_size=10&keyword=ethereum
 
 ```bash
 curl --request GET \
+  --header 'Accept-Language: zh-CN' \
+  --url 'https://api.techflowpost.com/api/v1/external/articles?page=1&page_size=10&keyword=bitcoin'
+```
+
+### 获取英文文章列表
+
+```bash
+curl --request GET \
+  --header 'Accept-Language: en-US' \
   --url 'https://api.techflowpost.com/api/v1/external/articles?page=1&page_size=10&keyword=bitcoin'
 ```
 
@@ -155,6 +217,15 @@ curl --request GET \
 
 ```bash
 curl --request GET \
+  --header 'Accept-Language: zh-CN' \
+  --url 'https://api.techflowpost.com/api/v1/external/newsflashes?page=1&page_size=10&keyword=ethereum'
+```
+
+### 获取英文快讯列表
+
+```bash
+curl --request GET \
+  --header 'Accept-Language: en-US' \
   --url 'https://api.techflowpost.com/api/v1/external/newsflashes?page=1&page_size=10&keyword=ethereum'
 ```
 
@@ -167,6 +238,7 @@ curl --request GET \
 - `page=0`
 - `page_size=101`
 - `category_id=1`
+- `lang=en-US`
 
 ### 429 Too Many Requests
 
